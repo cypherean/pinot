@@ -31,6 +31,7 @@ import io.swagger.annotations.SecurityDefinition;
 import io.swagger.annotations.SwaggerDefinition;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.inject.Inject;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -165,8 +166,13 @@ public class PinotTableInstances {
   @ApiResponses(value = {
       @ApiResponse(code = 200, message = "Success"), @ApiResponse(code = 500, message = "Internal server error")
   })
-  public Map<String, List<InstanceInfo>> getLiveBrokers() {
+  public Map<String, List<InstanceInfo>> getLiveBrokers(
+          @ApiParam(value = "Table name (with or without type)", required = true)
+          @QueryParam("tablename") Optional<String> tablename) {
     try {
+      if (tablename.isPresent()) {
+        return _pinotHelixResourceManager.getLiveBrokersInstanceForTable(tablename.get());
+      }
       return _pinotHelixResourceManager.getTableToLiveBrokersMapping();
     } catch (Exception e) {
       throw new ControllerApplicationException(LOGGER, e.getMessage(), Response.Status.NOT_FOUND);

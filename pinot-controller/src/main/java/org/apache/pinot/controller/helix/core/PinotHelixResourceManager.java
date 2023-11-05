@@ -3988,6 +3988,64 @@ public class PinotHelixResourceManager {
     }
   }
 
+  public Map<String, List<InstanceInfo>> getLiveBrokersInstanceForTable(String tableName)
+          throws TableNotFoundException {
+    ExternalView ev = _helixDataAccessor.getProperty(_keyBuilder.externalView(Helix.BROKER_RESOURCE_INSTANCE));
+    if (ev == null) {
+      throw new IllegalStateException("Failed to find external view for " + Helix.BROKER_RESOURCE_INSTANCE);
+    }
+
+    Map<String, InstanceConfig> instanceConfigMap = HelixHelper.getInstanceConfigs(_helixZkManager).stream()
+            .collect(Collectors.toMap(InstanceConfig::getInstanceName, Function.identity()));
+    ZNRecord znRecord = ev.getRecord();
+
+    Map<String, List<InstanceInfo>> result = new HashMap<>();
+    List<InstanceInfo> hosts = new ArrayList<>();
+
+    TableType inputTableType = TableNameBuilder.getTableTypeFromTableName(tableName);
+    if (inputTableType != null) {
+      if (!hasTable(tableName)) {
+        throw new TableNotFoundException(String.format("Table=%s not found", tableName));
+      }
+      hosts = getLiveBrokerInstanceForTablenameWithType(instanceConfigMap, znRecord, tableName);
+    }
+    String offlineTableName = TableNameBuilder.OFFLINE.tableNameWithType(tableName);
+    String realtimeTableName = TableNameBuilder.REALTIME.tableNameWithType(tableName);
+    boolean hasOfflineTable = hasTable(offlineTableName);
+    boolean hasRealtimeTable = hasTable(realtimeTableName);
+    if (!hasOfflineTable && !hasRealtimeTable) {
+      throw new TableNotFoundException(String.format("Table=%s not found", tableName));
+    }
+    if (hasOfflineTable && hasRealtimeTable) {
+      List<InstanceInfo> offlineTableBrokersList = new ArrayList<>(
+              getLiveBrokerInstanceForTablenameWithType(instanceConfigMap, znRecord, offlineTableName));
+      hosts = getLiveBrokerInstanceForTablenameWithType(instanceConfigMap, znRecord, realtimeTableName).stream()
+              .filter(offlineTableBrokersList::contains).collect(Collectors.toList());
+    } else {
+      hosts = getLiveBrokerInstanceForTablenameWithType(instanceConfigMap, znRecord,
+              hasOfflineTable ? offlineTableName : realtimeTableName);
+    }
+    if (!hosts.isEmpty()) {
+      result.put(tableName, hosts);
+    }
+    return result;
+  }
+
+  private List<InstanceInfo> getLiveBrokerInstanceForTablenameWithType(Map<String, InstanceConfig> instanceConfigMap,
+          ZNRecord znRecord, String tableName) {
+    List<InstanceInfo> hosts = new ArrayList<>();
+    Map<String, String> brokersToState = znRecord.getMapField(tableName);
+
+    for (Map.Entry<String, String> brokerEntry : brokersToState.entrySet()) {
+      if ("ONLINE".equalsIgnoreCase(brokerEntry.getValue()) && instanceConfigMap.containsKey(brokerEntry.getKey())) {
+        InstanceConfig instanceConfig = instanceConfigMap.get(brokerEntry.getKey());
+        hosts.add(new InstanceInfo(instanceConfig.getInstanceName(), instanceConfig.getHostName(),
+                Integer.parseInt(instanceConfig.getPort())));
+      }
+    }
+    return hosts;
+  }
+
   private List<String> getLiveBrokersForTable(ExternalView ev, String tableNameWithType) {
     Map<String, String> brokerToStateMap = ev.getStateMap(tableNameWithType);
     List<String> hosts = new ArrayList<>();
