@@ -3977,7 +3977,7 @@ public class PinotHelixResourceManager {
    * Returns map of tableName to list of live brokers
    * @return Map of tableName to list of ONLINE brokers serving the table
    */
-  public Map<String, List<InstanceInfo>> getTableToLiveBrokersMapping(@Nullable String nullableTableName)
+  public Map<String, List<InstanceInfo>> getTableToLiveBrokersMapping(Optional<String> optionalTableName)
           throws TableNotFoundException {
     ExternalView ev = _helixDataAccessor.getProperty(_keyBuilder.externalView(Helix.BROKER_RESOURCE_INSTANCE));
     if (ev == null) {
@@ -3991,10 +3991,10 @@ public class PinotHelixResourceManager {
     Map<String, List<InstanceInfo>> result = new HashMap<>();
     ZNRecord znRecord = ev.getRecord();
 
-    if (nullableTableName != null) {
-      List<String> tableNameWithType = getExistingTableNamesWithType(nullableTableName, null);
+    if (optionalTableName.isPresent() && !optionalTableName.get().isEmpty()) {
+      List<String> tableNameWithType = getExistingTableNamesWithType(optionalTableName.get(), null);
       if (tableNameWithType.isEmpty()) {
-        throw new TableNotFoundException(String.format("Table=%s not found", nullableTableName));
+        throw new TableNotFoundException(String.format("Table=%s not found", optionalTableName));
       }
       tableNameWithType.forEach(tableName -> {
         Map<String, String> brokersToState = znRecord.getMapField(tableName);
@@ -4007,9 +4007,7 @@ public class PinotHelixResourceManager {
                     Integer.parseInt(instanceConfig.getPort())));
           }
         }
-        if (!hosts.isEmpty()) {
-          result.put(tableName, hosts);
-        }
+        result.put(tableName, hosts);
       });
       return result;
     }
