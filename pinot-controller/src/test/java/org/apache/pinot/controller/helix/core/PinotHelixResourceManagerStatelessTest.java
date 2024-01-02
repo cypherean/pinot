@@ -400,6 +400,10 @@ public class PinotHelixResourceManagerStatelessTest extends ControllerTest {
     assertEquals(rawTableToLiveBrokersMapping.get(OFFLINE_TABLE_NAME).size(), NUM_BROKER_INSTANCES);
     assertEquals(rawTableToLiveBrokersMapping.get(REALTIME_TABLE_NAME).size(), NUM_BROKER_INSTANCES);
 
+    // Test that default value behaves the same as empty for optional argument
+    tableToLiveBrokersMapping = _helixResourceManager.getTableToLiveBrokersMapping(Optional.of(""));
+    assertEquals(tableToLiveBrokersMapping.size(), 2);
+
     // Test retrieving table name to live broker mapping for table with type suffix
     Map<String, List<InstanceInfo>> offlineTableToLiveBrokersMapping = _helixResourceManager
             .getTableToLiveBrokersMapping(Optional.of(OFFLINE_TABLE_NAME));
