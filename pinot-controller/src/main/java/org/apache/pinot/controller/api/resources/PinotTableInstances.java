@@ -165,7 +165,7 @@ public class PinotTableInstances {
           @ApiParam(value = "Table name (with or without type)", required = false) @DefaultValue("")
           @QueryParam("tableName") String tableName) {
     try {
-      return _pinotHelixResourceManager.getTableToLiveBrokersMapping(Optional.of(tableName));
+      return _pinotHelixResourceManager.getTableToLiveBrokersMapping(tableName);
     } catch (Exception e) {
       throw new ControllerApplicationException(LOGGER, e.getMessage(), Response.Status.NOT_FOUND);
     }
