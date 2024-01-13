@@ -28,7 +28,6 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -359,8 +358,7 @@ public class PinotHelixResourceManagerStatelessTest extends ControllerTest {
     assertThrows(TableNotFoundException.class, () -> _helixResourceManager.getLiveBrokersForTable(REALTIME_TABLE_NAME));
 
     // Test retrieving table to live brokers mapping
-    Map<String, List<InstanceInfo>> tableToLiveBrokersMapping = _helixResourceManager
-            .getTableToLiveBrokersMapping(Optional.empty());
+    Map<String, List<InstanceInfo>> tableToLiveBrokersMapping = _helixResourceManager.getTableToLiveBrokersMapping();
     assertEquals(tableToLiveBrokersMapping.size(), 1);
     assertEquals(tableToLiveBrokersMapping.get(OFFLINE_TABLE_NAME).size(), NUM_BROKER_INSTANCES);
 
@@ -383,7 +381,7 @@ public class PinotHelixResourceManagerStatelessTest extends ControllerTest {
     assertEquals(liveBrokersForTable.size(), 3);
 
     // Test retrieving table to live brokers mapping
-    tableToLiveBrokersMapping = _helixResourceManager.getTableToLiveBrokersMapping(Optional.empty());
+    tableToLiveBrokersMapping = _helixResourceManager.getTableToLiveBrokersMapping();
     assertEquals(tableToLiveBrokersMapping.size(), 2);
     assertEquals(tableToLiveBrokersMapping.get(OFFLINE_TABLE_NAME).size(), NUM_BROKER_INSTANCES);
     assertEquals(tableToLiveBrokersMapping.get(REALTIME_TABLE_NAME).size(), NUM_BROKER_INSTANCES);
@@ -395,28 +393,30 @@ public class PinotHelixResourceManagerStatelessTest extends ControllerTest {
 
     // Test retrieving table name to live broker mapping for table without type suffix
     Map<String, List<InstanceInfo>> rawTableToLiveBrokersMapping = _helixResourceManager
-            .getTableToLiveBrokersMapping(Optional.of(RAW_TABLE_NAME));
+            .getTableToLiveBrokersMapping(RAW_TABLE_NAME);
     assertEquals(rawTableToLiveBrokersMapping.size(), 2);
     assertEquals(rawTableToLiveBrokersMapping.get(OFFLINE_TABLE_NAME).size(), NUM_BROKER_INSTANCES);
     assertEquals(rawTableToLiveBrokersMapping.get(REALTIME_TABLE_NAME).size(), NUM_BROKER_INSTANCES);
 
     // Test that default value behaves the same as empty for optional argument
-    tableToLiveBrokersMapping = _helixResourceManager.getTableToLiveBrokersMapping(Optional.of(""));
+    tableToLiveBrokersMapping = _helixResourceManager.getTableToLiveBrokersMapping();
+    assertEquals(tableToLiveBrokersMapping.size(), 2);
+    tableToLiveBrokersMapping = _helixResourceManager.getTableToLiveBrokersMapping("");
     assertEquals(tableToLiveBrokersMapping.size(), 2);
 
     // Test retrieving table name to live broker mapping for table with type suffix
     Map<String, List<InstanceInfo>> offlineTableToLiveBrokersMapping = _helixResourceManager
-            .getTableToLiveBrokersMapping(Optional.of(OFFLINE_TABLE_NAME));
+            .getTableToLiveBrokersMapping(OFFLINE_TABLE_NAME);
     assertEquals(offlineTableToLiveBrokersMapping.size(), 1);
     assertEquals(offlineTableToLiveBrokersMapping.get(OFFLINE_TABLE_NAME).size(), NUM_BROKER_INSTANCES);
 
     // Test retrieving the live brokers for table with non-existent table-type
     assertThrows(TableNotFoundException.class, () -> _helixResourceManager
-            .getTableToLiveBrokersMapping(Optional.of("fake")));
+            .getTableToLiveBrokersMapping("fake"));
     assertThrows(TableNotFoundException.class, () -> _helixResourceManager
-            .getTableToLiveBrokersMapping(Optional.of("fake_OFFLINE")));
+            .getTableToLiveBrokersMapping("fake_OFFLINE"));
     assertThrows(TableNotFoundException.class, () -> _helixResourceManager
-            .getTableToLiveBrokersMapping(Optional.of("fake_REALTIME")));
+            .getTableToLiveBrokersMapping("fake_REALTIME"));
 
     // Delete the tables
     _helixResourceManager.deleteRealtimeTable(RAW_TABLE_NAME);

@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.Executor;
 import javax.inject.Inject;
@@ -154,8 +153,7 @@ public class PinotRunningQueryResource {
       @ApiParam(value = "Timeout for brokers to return running queries") @QueryParam("timeoutMs") @DefaultValue("3000")
           int timeoutMs, @Context HttpHeaders httpHeaders) {
     try {
-      Map<String, List<InstanceInfo>> tableBrokers = _pinotHelixResourceManager
-              .getTableToLiveBrokersMapping(Optional.empty());
+      Map<String, List<InstanceInfo>> tableBrokers = _pinotHelixResourceManager.getTableToLiveBrokersMapping();
       Map<String, InstanceInfo> brokers = new HashMap<>();
       tableBrokers.values().forEach(list -> list.forEach(info -> brokers.putIfAbsent(getInstanceKey(info), info)));
       return getRunningQueries(brokers, timeoutMs, createRequestHeaders(httpHeaders));
