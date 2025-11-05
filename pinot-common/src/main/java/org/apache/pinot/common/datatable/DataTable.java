@@ -151,11 +151,17 @@ public interface DataTable {
     // Needed so that we can track workload name in Netty channel response.
     WORKLOAD_NAME(40, "workloadName", MetadataValueType.STRING),
     // Needed so that we can track query id in Netty channel response.
-    QUERY_ID(41, "queryId", MetadataValueType.STRING);
+    QUERY_ID(41, "queryId", MetadataValueType.STRING),
+    // Indicates leaf-stage selection stopped due to a local cap (e.g., MSE lite per-node cap)
+    LITE_LEAF_LIMIT_REACHED(42, "liteLeafLimitReached", MetadataValueType.STRING),
+    // Reason why leaf truncated: one of {lite_cap, user_limit, order_by_buffer, group_trim}
+    LEAF_TRUNCATION_REASON(43, "leafTruncationReason", MetadataValueType.STRING),
+    // Specific flag for lite-cap based truncation (server sets when truncation occurred under lite-cap provenance)
+    LITE_LEAF_CAP_TRUNCATION(44, "liteLeafCapTruncation", MetadataValueType.BOOLEAN);
 
     // We keep this constant to track the max id added so far for backward compatibility.
     // Increase it when adding new keys, but NEVER DECREASE IT!!!
-    private static final int MAX_ID = QUERY_ID.getId();
+    private static final int MAX_ID = LITE_LEAF_CAP_TRUNCATION.getId();
 
     private static final MetadataKey[] ID_TO_ENUM_KEY_MAP = new MetadataKey[MAX_ID + 1];
     private static final Map<String, MetadataKey> NAME_TO_ENUM_KEY_MAP = new HashMap<>();

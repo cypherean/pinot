@@ -22,7 +22,9 @@ import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import org.apache.calcite.rel.RelFieldCollation;
+import org.apache.pinot.calcite.rel.hint.PinotHintOptions;
 import org.apache.pinot.calcite.rel.logical.PinotRelExchangeType;
 import org.apache.pinot.common.request.DataSource;
 import org.apache.pinot.common.request.Expression;
@@ -97,6 +99,15 @@ public class ServerPlanRequestVisitor implements PlanNodeVisitor<Void, ServerPla
           pinotQuery.setOrderByList(CalciteRexExpressionParser.convertOrderByList(collations, pinotQuery));
         }
         pinotQuery.setLimit(limit);
+        // Set provenance if the planner tagged this node
+        Map<String, Map<String, String>> hintOptions = node.getNodeHint().getHintOptions();
+        Map<String, String> limitOpts = hintOptions.get(PinotHintOptions.LIMIT_HINT_OPTIONS);
+        if (limitOpts != null) {
+          String prov = limitOpts.get(PinotHintOptions.LimitHintOptions.LIMIT_PROVENANCE);
+          if (prov != null) {
+            pinotQuery.putToQueryOptions("leafLimitProvenance", prov);
+          }
+        }
       }
       // There cannot be any more modification of PinotQuery post agg, thus this is the last one possible.
       context.setLeafStageBoundaryNode(node);
@@ -283,11 +294,20 @@ public class ServerPlanRequestVisitor implements PlanNodeVisitor<Void, ServerPla
         if (!collations.isEmpty()) {
           pinotQuery.setOrderByList(CalciteRexExpressionParser.convertOrderByList(collations, pinotQuery));
         }
-        if (node.getFetch() >= 0) {
-          pinotQuery.setLimit(node.getFetch());
-        }
         if (node.getOffset() >= 0) {
           pinotQuery.setOffset(node.getOffset());
+        }
+        if (node.getFetch() >= 0) {
+          pinotQuery.setLimit(node.getFetch());
+          // Set provenance if the planner tagged this node
+          Map<String, Map<String, String>> hintOptions = node.getNodeHint().getHintOptions();
+          Map<String, String> limitOpts = hintOptions.get(PinotHintOptions.LIMIT_HINT_OPTIONS);
+          if (limitOpts != null) {
+            String prov = limitOpts.get(PinotHintOptions.LimitHintOptions.LIMIT_PROVENANCE);
+            if (prov != null) {
+              pinotQuery.putToQueryOptions("leafLimitProvenance", prov);
+            }
+          }
         }
       } else {
         context.setLeafStageBoundaryNode(node.getInputs().get(0));

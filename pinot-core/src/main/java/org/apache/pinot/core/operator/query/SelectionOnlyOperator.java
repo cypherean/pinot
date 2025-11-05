@@ -55,6 +55,9 @@ public class SelectionOnlyOperator extends BaseOperator<SelectionResultsBlock> {
   private final ArrayList<Object[]> _rows;
   private final RoaringBitmap[] _nullBitmaps;
 
+  // Heuristic: mark when local cap is hit and current block had more rows than we could admit
+  private boolean _liteLeafLimitReached;
+
   private int _numDocsScanned = 0;
 
   public SelectionOnlyOperator(IndexSegment indexSegment, QueryContext queryContext,
@@ -143,11 +146,22 @@ public class SelectionOnlyOperator extends BaseOperator<SelectionResultsBlock> {
         }
       }
       if (_rows.size() == _numRowsToKeep) {
+        if (valueBlock.getNumDocs() > numDocsToAdd && _numRowsToKeep > 0) {
+          _liteLeafLimitReached = true;
+        }
         break;
       }
     }
 
-    return new SelectionResultsBlock(_dataSchema, _rows, _queryContext);
+    SelectionResultsBlock results = new SelectionResultsBlock(_dataSchema, _rows, _queryContext);
+    if (_liteLeafLimitReached) {
+      results.setLiteLeafLimitReached(true);
+      String prov = _queryContext.getQueryOptions().get("leafLimitProvenance");
+      if (prov != null) {
+        results.setLeafTruncationReason(prov);
+      }
+    }
+    return results;
   }
 
   @Override

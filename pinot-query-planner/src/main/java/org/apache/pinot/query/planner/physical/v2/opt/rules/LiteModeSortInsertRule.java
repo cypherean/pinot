@@ -104,8 +104,7 @@ public class LiteModeSortInsertRule extends PRelOptRule {
     }
     PRelNode input = call._currentNode;
     return new PhysicalSort(input.unwrap().getCluster(), RelTraitSet.createEmpty(), List.of(),
-        relCollation, null /* offset */, newFetch, input, nodeId(), input.getPinotDataDistributionOrThrow(),
-        true);
+        relCollation, null /* offset */, newFetch, input, nodeId(), input.getPinotDataDistributionOrThrow(), true);
   }
 
   private int computeLiteModeLimit(int leafStageLimit, int leafStageFanOutAdjustedLimit, int numWorkers) {

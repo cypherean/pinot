@@ -41,6 +41,7 @@ public class PinotHintOptions {
   public static final String JOIN_HINT_OPTIONS = "joinOptions";
   public static final String TABLE_HINT_OPTIONS = "tableOptions";
   public static final String WINDOW_HINT_OPTIONS = "windowOptions";
+  public static final String LIMIT_HINT_OPTIONS = "limitOptions";
 
   public static class AggregateOptions {
     public static final String IS_PARTITIONED_BY_GROUP_BY_KEYS = "is_partitioned_by_group_by_keys";
@@ -77,6 +78,14 @@ public class PinotHintOptions {
      *   BREAK: Break window cache build process, continue to perform WINDOW operation, results might be partial.
      */
     public static final String WINDOW_OVERFLOW_MODE = "window_overflow_mode";
+  }
+
+  public static class LimitHintOptions {
+    /** Provenance of a LIMIT/fetch applied at a node. */
+    public static final String LIMIT_PROVENANCE = "limit_provenance";
+
+    /** Value used when LIMIT was introduced by MSE Lite mode enforcement. */
+    public static final String PROVENANCE_LITE_CAP = "LITE_CAP";
   }
 
   public static class JoinHintOptions {
